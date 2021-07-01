@@ -1,1 +1,657 @@
-Hello World
+<div align="center">
+
+   <label for="usd-amount">Amount (USD):</label>
+
+  <input id="usd-amount" class="field-element field-control" type="text" />
+
+ <button id="update" class="button">Update</button>
+
+  </br>
+
+
+
+</div>
+
+
+
+<div id="wrapper">
+
+
+
+    <div id="info-container">
+
+        <div>
+
+            <strong>Exchange Rate</strong>
+
+        </div>
+
+        <div id="usd-tlos-price">
+
+        </div>
+
+        <div>
+
+            <strong>No.of TLOS</strong>
+
+        </div>
+
+        <div id="tlos-amount">
+
+        </div>
+
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+    <div id="info-container2">
+
+        <div>
+
+            <strong>Fees</strong>
+
+        </div>
+
+        <div id="fee-amount">
+
+        </div>
+
+
+
+        <div>
+
+            <strong>Total (incl. fees)</strong>
+
+        </div>
+
+        <div id="total-amount">
+
+        </div>
+
+
+
+    </div>
+
+</div>
+
+<div id="disclaimer" align="center">
+
+
+
+    Figures above are estimates only</div>
+
+
+
+<div align="center">
+
+    <input id="telos-account" maxlength="12" placeholder="Enter Telos Account" class="field-element field-control" type="text" />
+
+</div>
+
+
+
+</br>
+
+<div align="center">
+
+    <button id="buy-tlos" class="button sqs-system-button sqs-editable-button">Continue with moonpay</button>
+
+    <div>
+
+        Moonpay window will display below
+
+    </div>
+
+</br>
+
+</div>
+
+
+
+
+
+
+
+
+
+<div class="moonpay-iframe-container">
+
+    <iframe id="buytlos" class="moonpay-iframe" allow="accelerometer; autoplay; camera; gyroscope; payment"
+
+        frameborder="0">
+
+        <p>Your browser does not support iframes.</p>
+
+    </iframe>
+
+</div>
+
+
+
+<script type="text/javascript">
+
+    var telosAccountInput = document.getElementById('telos-account');
+
+    var usdAmountInput = document.getElementById('usd-amount');
+
+    var usdTlosPriceDiv = document.getElementById('usd-tlos-price');
+
+    var tlosAmountDiv = document.getElementById('tlos-amount');
+
+    var feeAmountDiv = document.getElementById('fee-amount');
+
+    var totalAmountDiv = document.getElementById('total-amount');
+
+    var buyTlosButton = document.getElementById('buy-tlos');
+
+    var minimumAmount = 25;
+
+    
+
+	telosAccountInput.addEventListener('focusout', accountNameSet);
+
+  usdAmountInput.addEventListener('focusout', amountSet);
+
+  buyTlosButton.addEventListener('click', accountNameSet);
+
+  buyTlosButton.addEventListener('click',amountSet);
+
+  buyTlosButton.addEventListener('click', goToPage);
+
+
+
+
+
+    var validAccount = false;
+
+    var validAmount = false;
+
+    var quoteCompleted = false;
+
+
+
+    /*handleChange(); */
+
+
+
+    function accountNameSet() {
+
+        telosAccountInput.value = telosAccountInput.value.toLowerCase().trim();
+
+        var accountName = telosAccountInput.value;
+
+        var nameCheckRequest = new XMLHttpRequest();
+
+        nameCheckRequest.addEventListener('load', function () {
+
+            if (this.status == 200) {
+
+                alert("This Telos account does not exist");
+
+                telosAccountInput.value = '';
+
+                validAccount = false;
+
+            } else {
+
+                validAccount = true;
+
+            }
+
+            handleChange();
+
+        })
+
+
+
+        nameCheckRequest.open('get', `https://api.telos.net/v1/accounts/${accountName}`);
+
+        nameCheckRequest.send();
+
+    }
+
+
+
+    function amountSet() {
+
+        var amount = parseFloat(usdAmountInput.value);
+
+        if (amount < minimumAmount) {
+
+            alert(`Minimum amount is $${minimumAmount}`);
+
+            validAmount = false;
+
+        } else {
+
+            validAmount = true;
+
+        }
+
+        getMoonpayQuote();
+
+       /* handleChange(); */
+
+    }
+
+/*
+
+    function handleChange() {
+
+        if (!validAccount || !validAmount) {
+
+            setButtonDisabled(true);
+
+        } else {
+
+            setButtonDisabled(false);
+
+        }
+
+    }
+
+    */
+
+
+
+  /* function setButtonDisabled(disabled) {
+
+          if ((disabled && !buyTlosButton.hasAttribute('disabled')) || (!disabled && buyTlosButton.hasAttribute('disabled')))
+
+              buyTlosButton.toggleAttribute('disabled');
+
+      }*/
+
+    
+
+
+
+    /*
+
+    // Get api link for moonpay
+
+    function moonpayLink() {
+
+        var amount = document.getElementById('amount').value;
+
+
+
+        document.getElementById("getquote").src =
+
+            `https://api.moonpay.io/v3/currencies/eos/buy_quote/?apiKey=pk_live_bLNjJYoA2bwYMs7ir72Tgb5jLyHrK&baseCurrencyAmount=${amount}&extraFeePercentage=0&baseCurrencyCode=usd&paymentMethod=credit_debit_card,sepa_bank_transfer,gbp_bank_transfer,apple_pay`;
+
+    }
+
+    */
+
+
+
+    /*
+
+        // Callback to run when data is ready
+
+        function coinGeckoListener() {
+
+            var data = JSON.parse(this.responseText);
+
+            document.getElementById('usd-tlos-price').innerHTML = data.telos.usd;
+
+        }
+
+    
+
+        // Create a new ajax requst
+
+        var oReq = new XMLHttpRequest();
+
+        // Fire callback on load event
+
+        oReq.addEventListener("load", coinGeckoListener);
+
+        // Create the connection to our API
+
+        oReq.open("GET", "https://api.coingecko.com/api/v3/simple/price?ids=telos&vs_currencies=usd");
+
+        // Fire the request
+
+        oReq.send();
+
+        */
+
+
+
+
+
+    // Callback to run when data is ready
+
+    function moonpayQuoteListener() {
+
+        var data = JSON.parse(this.responseText);
+
+        feeAmountDiv.innerHTML = `$${parseFloat(data.feeAmount).toFixed(2)}`;
+
+        totalAmountDiv.innerHTML = `$${(data.totalAmount).toFixed(2)}`;
+
+        getNewdexQuote(parseFloat(data.quoteCurrencyAmount));
+
+    }
+
+
+
+    function getMoonpayQuote() {
+
+        // Create a new ajax requst
+
+        var oReq = new XMLHttpRequest();
+
+        // Fire callback on load event
+
+        oReq.addEventListener("load", moonpayQuoteListener);
+
+        // Create the connection to our API
+
+        oReq.open("GET", `https://api.moonpay.io/v3/currencies/eos/buy_quote/?apiKey=pk_live_bLNjJYoA2bwYMs7ir72Tgb5jLyHrK&baseCurrencyAmount=${usdAmountInput.value}&extraFeePercentage=0&baseCurrencyCode=usd&enabledPaymentMethods=credit_debit_card,sepa_bank_transfer,gbp_bank_transfer,apple_pay`);
+
+        // Fire the request
+
+        oReq.send();
+
+    }
+
+
+
+    function getNewdexQuote(eosAmount) {
+
+        var newdexQuery = new XMLHttpRequest();
+
+        // Fire callback on load event
+
+        newdexQuery.addEventListener("load", function () {
+
+            var data = JSON.parse(this.responseText);
+
+            var asks = data.data.asks;
+
+            asks.sort((a, b) => {
+
+                if (a[0] < b[0])
+
+                    return -1;
+
+
+
+                return 1;
+
+            });
+
+
+
+            var tlosTotal = 0;
+
+            var eosLeft = eosAmount;
+
+            for (var i = 0; i < asks.length; i++) {
+
+                var eosPrice = asks[i][0];
+
+                var tlosAmount = asks[i][1];
+
+                var eosSpendable = eosPrice * tlosAmount;
+
+                var toSpend = eosLeft < eosSpendable ? eosLeft : eosSpendable;
+
+                tlosTotal += (toSpend / eosPrice);
+
+                eosLeft -= toSpend;
+
+                if (eosLeft < 0)
+
+                    throw new Error("Overspend!!!");
+
+
+
+                if (eosLeft == 0)
+
+                    break;
+
+            }
+
+
+
+            tlosAmountDiv.innerText = `${tlosTotal.toFixed(4)} TLOS`;
+
+            usdTlosPriceDiv.innerText = `$${(parseFloat(usdAmountInput.value) / tlosTotal).toFixed(4)}`;
+
+
+
+        });
+
+        // Create the connection to our API
+
+        newdexQuery.open("GET", "https://api.newdex.io/v1/depth?symbol=eosio.token-tlos-eos");
+
+        // Fire the request
+
+        newdexQuery.send();
+
+    }
+
+
+
+    function goToPage() {
+
+        var telosAccount = encodeURIComponent(telosAccountInput.value);
+
+        var amount = usdAmountInput.value;
+
+        var urlToSign = `https://buy.moonpay.io?apiKey=pk_live_bLNjJYoA2bwYMs7ir72Tgb5jLyHrK&currencyCode=eos&walletAddress=tradefortlos&baseCurrencyCode=usd&walletAddressTag=${encodeURIComponent(telosAccount)}&baseCurrencyAmount=${amount}`;
+
+        var signatureRequest = new XMLHttpRequest();
+
+        signatureRequest.open("POST", "https://api.telos.net/v1/trading/getMoonpaySwapUrl");
+
+
+
+        signatureRequest.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+
+        var requestBody = JSON.stringify({
+
+            urlToSign: urlToSign
+
+        });
+
+
+
+        signatureRequest.onload = function() {
+
+            if (signatureRequest.readyState == 4 && signatureRequest.status == 200) {
+
+                var moonpayIframe = document.getElementById("buytlos");
+
+                moonpayIframe.src = signatureRequest.responseText;
+
+                moonpayIframe.scrollIntoView();
+
+            } else {
+
+                console.error(signatureRequest.responseText);
+
+            }
+
+        }
+
+
+
+        signatureRequest.send(requestBody);
+
+    }
+
+</script>
+
+
+
+<style type="text/css">
+
+    html {
+
+        scroll-behavior: smooth;
+
+    }
+
+
+
+    label {
+
+        font-weight: bold;
+
+    }
+
+
+
+    .moonpay-iframe-container {
+
+        position: relative;
+
+        overflow: hidden;
+
+        width: 100%;
+
+        height:800px;
+
+        padding-top: 62.5%;
+
+    }
+
+
+
+    /* Then style the iframe to fit in the container div with full height and width */
+
+    .moonpay-iframe {
+
+        position: absolute;
+
+        top: 0;
+
+        left: 0;
+
+        bottom: 0;
+
+        right: 0;
+
+        width: 100%;
+
+        height: 100%;
+
+    }
+
+
+
+
+
+    div#wrapper {
+
+		margin-left: 25%;
+
+        margin-right: 25%;
+
+        border-width: 1px;
+
+        border-color: black;
+
+        border-style: solid;
+
+        padding: 1.25em;
+
+        border-radius: 25px;
+
+        margin-bottom: 0em;
+
+        margin-top: 1em;
+
+        line-height: 1.5em
+
+		
+
+    }
+
+
+
+@media (max-width: 30em) {
+
+div#wrapper {
+
+		margin-left: 0%;
+
+        margin-right: 0%;
+
+  }
+
+yui_3_17_2_1_1601954363390_11108 {
+
+text-align: left;
+
+  }
+
+
+
+ }
+
+
+
+    div#info-container {
+
+        font-size: small;
+
+        display: inline-block;
+
+        min-width: 50%;
+
+        float:left;
+
+    }
+
+
+
+    div#info-container2 {
+
+        font-size: small;
+
+        border-radius: 25px;
+
+        display: inline-block;
+
+        min-width: 50%;
+
+    }
+
+
+
+    div#disclaimer {
+
+        font-size: small;
+
+        margin-bottom: 2em;
+
+    }
+
+
+
+    .field-element {
+
+        height: 1.5em;
+
+        margin: 0.2em;
+
+        padding: 0.3em;
+
+    }
+
+</style>
